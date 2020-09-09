@@ -1,0 +1,16 @@
+1               constant density
+150000d-2  temperature fixed at this point, if bigger than xmax it uses the Pe given 
+1               q_or_Pe 0 q needs to be calculate 1 Pe does
+1d0       1d0       Lewis of F and Z respectivly
+5 0.7              Beta y Gamma
+1.2 q
+1.2 -1.2  
+0.15                  b (K in the analysis of Vadim)
+0.95d0 0.90d0         relax factors
+10d-12               tol
+-60d0 60d0            interval limits
+1000000000             maximum iterations
+1000                show intermidiate iterations
+-20 20                 exchange limits
+0                     read initial data
+9601                  n

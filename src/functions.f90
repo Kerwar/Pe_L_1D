@@ -1,6 +1,6 @@
 module functions
 
-  
+  use variables_m, only: sparse_t
   implicit none
    
   contains
@@ -10,42 +10,49 @@ module functions
     DOUBLE PRECISION, INTENT(IN) :: h, bK, q
     DOUBLE PRECISION, INTENT(IN), DIMENSION(:) :: Pe
     INTEGER, INTENT(IN) :: nmin, nmax
-    DOUBLE PRECISION, INTENT(INOUT), DIMENSION(:,:,:)  :: A
+    type(sparse_t), INTENT(INOUT), DIMENSION(:,:)  :: A
     DOUBLE PRECISION, INTENT(INOUT), DIMENSION(:,:) ::  b
     INTEGER :: i,n
     
     n = size(b, dim = 2)
-    A(1,1,1) = h*h
+
+    A(:,:)%l = 0.0
+    A(:,:)%c = 0.0
+    A(:,:)%r = 0.0
+
+    A(1,1)%c = h*h
     
-    A(2,1,1) = 2d0 
-    A(2,1,2) = -2d0
+    A(2,1)%c = 2d0 
+    A(2,1)%r = -2d0
     
      
     do i = 2, nmin-1
-      A(:,i,i-1) = -Pe(:)*h/2d0-1d0
-      A(:,i,i) = 2d0 
-      A(:,i,i+1) = Pe(:)*h/2d0-1d0
+      A(:,i)%l = -Pe(:)*h/2d0-1d0
+      A(:,i)%c = 2d0 
+      A(:,i)%r = Pe(:)*h/2d0-1d0
   
     enddo
     do i = nmin,nmax
-        A(:,i,i-1) = -Pe(:)*h/2d0-1d0
-        A(:,i,i) = 2d0 + bK*h*h
-        A(:,i,i+1) = Pe(:)*h/2d0-1d0
+        A(:,i)%l = -Pe(:)*h/2d0-1d0
+        A(:,i)%c = 2d0 + bK*h*h
+        A(:,i)%r = Pe(:)*h/2d0-1d0
   
     enddo
     do i = nmax+1,n-1
-      A(:,i,i-1) = -Pe(:)*h/2d0-1d0
-      A(:,i,i) = 2d0 
-      A(:,i,i+1) = Pe(:)*h/2d0-1d0
+      A(:,i)%l = -Pe(:)*h/2d0-1d0
+      A(:,i)%c = 2d0 
+      A(:,i)%r = Pe(:)*h/2d0-1d0
   
     enddo
   
-    A(1,n,n-1) = -2d0
-    A(1,n,n) = 2d0 
+    A(1,n)%l = -2d0
+    A(1,n)%c = 2d0 
     
-    A(2,n,n) = h*h
+    A(2,n)%c = h*h
     
-    A = A/(h*h)
+    A%l = A%l /(h*h)
+    A%c = A%c /(h*h)
+    A%r = A%r /(h*h)
   
     b = q*Z*rho*rho
     b(:,nmin:nmax) = b(:,nmin:nmax) +bK*T(2:1:-1,nmin:nmax)
@@ -62,30 +69,40 @@ module functions
     DOUBLE PRECISION, INTENT(IN), DIMENSION(:,:) :: rho, Z, T
     DOUBLE PRECISION, INTENT(IN) :: h,  Le_f, beta, gamma
     DOUBLE PRECISION, INTENT(IN), DIMENSION(:) :: Pe
-    DOUBLE PRECISION, INTENT(INOUT), DIMENSION(:,:,:)  :: A
+    type(sparse_t), INTENT(INOUT), DIMENSION(:,:)  :: A
     DOUBLE PRECISION, INTENT(INOUT), DIMENSION(:,:) :: b
     INTEGER :: i,n
     
     n = size(b, dim = 2)
   
-    A(1,1,1) = h*h*Le_f
+    A(:,:)%l = 0.0
+    A(:,:)%c = 0.0
+    A(:,:)%r = 0.0
+
+    A(1,1)%c = h*h*Le_f
     
-    A(2,1,1) = 2d0 + rho(2,1)*rho(2,1)*beta*beta*dexp((beta*(T(2,1)-1d0))/(1d0+gamma*(T(2,1)-1d0)))*Z(2,1)*h*h*Le_f
-    A(2,1,2) = -2d0
+    A(2,1)%c = 2d0 + rho(2,1)*rho(2,1) * beta*beta * &
+    dexp((beta*(T(2,1)-1d0))/(1d0+gamma*(T(2,1)-1d0)))*Z(2,1)*h*h*Le_f
+    A(2,1)%r = -2d0
   
     do i = 2,n-1
-        A(:,i,i-1) = -Pe(:)*h*Le_f/2-1d0
-        A(:,i,i) = 2d0 + rho(:,i)**2*beta*beta*dexp((beta*(T(:,i)-1d0))/(1d0+gamma*(T(:,i)-1d0)))*Z(:,i)*h*h*Le_f
-        A(:,i,i+1) = Pe(:)*h*Le_f/2-1d0
+        A(:,i)%l = -Pe(:)*h*Le_f/2-1d0
+        A(:,i)%c = 2d0 + rho(:,i)**2 * beta*beta * &
+        dexp((beta*(T(:,i)-1d0))/(1d0+gamma*(T(:,i)-1d0)))*Z(:,i)*h*h*Le_f
+        A(:,i)%r = Pe(:)*h*Le_f/2-1d0
         
     enddo
   
-    A(1,n,n-1) = -2d0
-    A(1,n,n) = 2d0 + rho(1,n)*rho(1,n)*beta*beta*dexp((beta*(T(1,n)-1d0))/(1d0+gamma*(T(1,n)-1d0)))*Z(1,n)*h*h*Le_f
+    A(1,n)%l = -2d0
+    A(1,n)%c = 2d0 + rho(1,n)*rho(1,n) * beta*beta * &
+    dexp((beta*(T(1,n)-1d0))/(1d0+gamma*(T(1,n)-1d0)))*Z(1,n)*h*h*Le_f
     
-    A(2,n,n) = h*h*Le_f
+    A(2,n)%c = h*h*Le_f
     
-    A = A/(h*h*Le_f)
+    A(:,:)%l = A(:,:)%l / (h*h*Le_f)
+    A(:,:)%c = A(:,:)%c / (h*h*Le_f)
+    A(:,:)%r = A(:,:)%r / (h*h*Le_f)
+
     b(1,1) = 1d0
     b(2,n) = 1d0
   end subroutine massfractionF
@@ -94,51 +111,57 @@ module functions
     DOUBLE PRECISION, INTENT(IN), DIMENSION(:,:) :: rho, F, T
     DOUBLE PRECISION, INTENT(IN) :: h, Le_z, beta, gamma
     DOUBLE PRECISION, INTENT(IN), DIMENSION(:) :: Pe
-    DOUBLE PRECISION, INTENT(INOUT), DIMENSION(:,:,:)  :: A
+    type(sparse_t)  , INTENT(INOUT), DIMENSION(:,:)  :: A
     INTEGER :: i,n
     
     n = size(F, dim = 2)
   
-    A(1,1,1) = h*h*Le_z
+    A(:,:)%l = 0.0
+    A(:,:)%c = 0.0
+    A(:,:)%r = 0.0
+
+    A(1,1)%c = h*h*Le_z
      
-    A(2,1,1) = 2d0 + rho(2,1)*rho(2,1)*h*h*Le_z &
-    - rho(2,1)*rho(2,1)*beta*beta*dexp((beta*(T(2,1)-1d0))/(1d0+gamma*(T(2,1)-1d0)))*F(2,1)*h*h*Le_z
-    A(2,1,2) = -2d0
+    A(2,1)%c = 2d0 + rho(2,1)*rho(2,1)*h*h*Le_z - rho(2,1)*rho(2,1) * &
+    beta*beta*dexp((beta*(T(2,1)-1d0))/(1d0+gamma*(T(2,1)-1d0)))*F(2,1)*h*h*Le_z
+    A(2,1)%r = -2d0
     
     do i = 2,n-1
-        A(:,i,i-1) = -Pe(:)*h*Le_z/2d0-1d0
-        A(:,i,i) = 2d0 +rho(:,i)*rho(:,i)*h*h*Le_z &
-        - rho(:,i)*rho(:,i)*beta*beta*dexp((beta*(T(:,i)-1d0))/(1d0+gamma*(T(:,i)-1d0)))&
-        *F(:,i)*h*h*Le_z
-        A(:,i,i+1) = Pe(:)*h*Le_z/2d0-1d0
+        A(:,i)%l = -Pe(:)*h*Le_z/2d0-1d0
+        A(:,i)%c = 2d0 +rho(:,i)*rho(:,i)*h*h*Le_z - rho(:,i)*rho(:,i) * &
+        beta*beta*dexp((beta*(T(:,i)-1d0))/(1d0+gamma*(T(:,i)-1d0))) * &
+        F(:,i)*h*h*Le_z
+        A(:,i)%r = Pe(:)*h*Le_z/2d0-1d0
   
     enddo
     
-    A(1,n,n-1) = -2d0
-    A(1,n,n) = 2d0 + rho(1,n)*rho(1,n)*h*h*Le_z &
-    - rho(1,n)*rho(1,n)*beta*beta*dexp((beta*(T(1,n)-1d0))/(1d0+gamma*(T(1,n)-1d0)))*F(1,n)*h*h*Le_z
+    A(1,n)%l = -2d0
+    A(1,n)%c = 2d0 + rho(1,n)*rho(1,n)*h*h*Le_z - rho(1,n)*rho(1,n) * &
+    beta*beta*dexp((beta*(T(1,n)-1d0))/(1d0+gamma*(T(1,n)-1d0)))*F(1,n)*h*h*Le_z
     
-    A(2,n,n) = h*h*Le_z
+    A(2,n)%c = h*h*Le_z
     
-    A = A/(h*h*Le_z)
+    A(:,:)%l = A(:,:)%l / (h*h*Le_z)
+    A(:,:)%c = A(:,:)%c / (h*h*Le_z)
+    A(:,:)%r = A(:,:)%r / (h*h*Le_z)
   
   end subroutine massfractionZ
   
   subroutine onestepgaussseidel(A, b, x, xp)
-    DOUBLE PRECISION, INTENT(IN), DIMENSION(:,:)  :: A
+    type(sparse_t), INTENT(IN), DIMENSION(:)  :: A
     DOUBLE PRECISION, INTENT(IN), DIMENSION(:) ::  b
     DOUBLE PRECISION, INTENT(INOUT), DIMENSION(:) ::  x, xp
     INTEGER :: i,n
     
     n = size(b)
   
-    x(1) = (1d0/A(1,1))*(-A(1,2)*xp(2)+b(1))
+    x(1) = (1d0/A(1)%c)*(-A(1)%r*xp(2)+b(1))
     do i= 2, n-1
-      x(i) = (1d0/A(i,i))*&
-      (-A(i,i-1)*x(i-1)-A(i,i+1)*xp(i+1)+b(i))
+      x(i) = (1d0/A(i)%c)*&
+      (-A(i)%l * x(i-1) -A(i)%r * xp(i+1)+b(i))
     enddo
   
-    x(n) = (1d0/A(n,n))*(-A(n,n-1)*x(n-1)+b(n))
+    x(n) = (1d0/A(n)%c)*(-A(n)%l * x(n-1)+b(n))
   
   end subroutine onestepgaussseidel
   
