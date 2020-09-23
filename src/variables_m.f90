@@ -1,8 +1,8 @@
 module variables_m
   
-  implicit none
+  use type_m, only: DP
   
-  integer , parameter :: DP = selected_real_kind(15 , 307)
+  implicit none
   
   type, public :: sparse_t
   ! left, central, right diagonal
@@ -43,17 +43,7 @@ module variables_m
   !   type(sparse_t), intent(  out) :: B
   ! end function sparse_mult_reverse
   ! end interface
-  type(sparse_t), ALLOCATABLE, dimension(:,:), SAVE :: A 
-  real(DP), ALLOCATABLE, dimension(:,:),  SAVE :: b , x , xp, &
-  rho, omega_c, omega_b
-  real(DP), allocatable, dimension(:), save :: xgrid
-  real(DP), SAVE :: Le_f, Le_z, beta, gamma, q, bK, relax, &
-  tol, xmin, xmax, h, x1change, x2change, time_start, time_finish, fixt,&
-  relaxPe
-  real(DP), DIMENSION(2), SAVE ::  Pe 
-  INTEGER, SAVE :: n, show, maxiter, nmin, nmax, initial_data, & 
-  ctedens,index_fixt, q_or_Pe 
-  CHARACTER(400), SAVE :: file_output = ''
+
   
   contains
 
